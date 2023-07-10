@@ -2,40 +2,42 @@ import React, { useEffect, useState } from "react";
 import Navbar from "./components/Navbar";
 import { FiSearch } from "react-icons/fi";
 import { AiFillPlusCircle } from "react-icons/ai";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, onSnapshot } from "firebase/firestore";
 import { db } from "./config/firebase";
 import ContactsCard from "./components/ContactsCard";
 import AddAndUpdateContact from "./components/AddAndUpdateContact";
+import useDisclouse from "./hooks/useDisclouse";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function App() {
   const [contacts, setContacts] = useState([]);
-  const [isOpen, setOpen] = useState(false);
-
-  const onOpen = () => {
-    setOpen(true);
-  };
-  const onClose = () => {
-    setOpen(false);
-  };
+  const { isOpen, onClose, onOpen } = useDisclouse();
 
   useEffect(() => {
     const getContact = async () => {
       try {
         const contactsRef = collection(db, "contacts");
-        const contactsSnapshot = await getDocs(contactsRef);
+        // const contactsSnapshot = await getDocs(contactsRef);
         // console.log(contactsSnapshot);
-        const contactList = contactsSnapshot.docs.map((doc) => {
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
+        onSnapshot(contactsRef, (snapshot) => {
+          const contactList = snapshot.docs.map((doc) => {
+            return {
+              id: doc.id,
+              ...doc.data(),
+            };
+          });
+          // console.log(contactList);
+          setContacts(contactList);
+          return contactList;
         });
-        // console.log(contactList);
-        setContacts(contactList);
-      } catch (error) {}
+      } catch (error) {
+        console.log(error);
+      }
     };
     getContact();
   }, []);
+
   return (
     <>
       <div className="max-w-[370px] mx-auto px-4">
@@ -60,6 +62,7 @@ export default function App() {
         </div>
       </div>
       <AddAndUpdateContact isOpen={isOpen} onClose={onClose} />
+      <ToastContainer position="bottom-center" />
     </>
   );
 }
