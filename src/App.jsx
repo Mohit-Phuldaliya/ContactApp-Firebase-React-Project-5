@@ -9,6 +9,7 @@ import AddAndUpdateContact from "./components/AddAndUpdateContact";
 import useDisclouse from "./hooks/useDisclouse";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import NotFoundContact from "./components/NotFoundContact";
 
 export default function App() {
   const [contacts, setContacts] = useState([]);
@@ -38,6 +39,26 @@ export default function App() {
     getContact();
   }, []);
 
+  const filterContacts = (e) => {
+    const value = e.target.value;
+
+    const contactsRef = collection(db, "contacts");
+    onSnapshot(contactsRef, (snapshot) => {
+      const contactList = snapshot.docs.map((doc) => {
+        return {
+          id: doc.id,
+          ...doc.data(),
+        };
+      });
+
+      const filteredContacts = contactList.filter((contact) =>
+        contact.name.toLowerCase().includes(value.toLowerCase())
+      );
+      setContacts(filteredContacts);
+      return filteredContacts;
+    });
+  };
+
   return (
     <>
       <div className="max-w-[370px] mx-auto px-4">
@@ -46,6 +67,7 @@ export default function App() {
           <div className="flex relative items-center flex-grow">
             <FiSearch className="text-3xl ml-1 text-white absolute" />
             <input
+              onChange={filterContacts}
               type="text"
               className="bg-transparent flex-grow pl-9 text-white border-white border rounded-md h-10"
             />
@@ -56,9 +78,13 @@ export default function App() {
           />
         </div>
         <div className="mt-4 flex flex-col gap-3">
-          {contacts.map((contact) => (
-            <ContactsCard key={contact.id} contact={contact} />
-          ))}
+          {contacts.length <= 0 ? (
+            <NotFoundContact />
+          ) : (
+            contacts.map((contact) => (
+              <ContactsCard key={contact.id} contact={contact} />
+            ))
+          )}
         </div>
       </div>
       <AddAndUpdateContact isOpen={isOpen} onClose={onClose} />
